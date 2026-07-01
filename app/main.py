@@ -17,10 +17,8 @@ excel_service = ExcelService()
 @app.get("/")
 async def home(request: Request):
     return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request
-        }
+        name="index.html",
+        context={"request": request}
     )
 
 
