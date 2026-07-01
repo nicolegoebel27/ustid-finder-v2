@@ -1,10 +1,11 @@
-from providers.base_provider import BaseProvider
+import requests
+
+from app.config import SERPAPI_KEY
 
 
-class WebsiteProvider(BaseProvider):
+class WebsiteProvider:
 
-    def __init__(self):
-        pass
+    BASE_URL = "https://serpapi.com/search.json"
 
     def find_website(
         self,
@@ -24,8 +25,41 @@ class WebsiteProvider(BaseProvider):
             f"{country}"
         )
 
-        print("Suche:", query)
+        params = {
+            "engine": "google",
+            "q": query,
+            "google_domain": "google.de",
+            "gl": "de",
+            "hl": "de",
+            "api_key": SERPAPI_KEY
+        }
 
-        # HIER kommt später die eigentliche Suche hinein.
+        try:
 
-        return None
+            response = requests.get(
+                self.BASE_URL,
+                params=params,
+                timeout=20
+            )
+
+            response.raise_for_status()
+
+            data = response.json()
+
+            if "organic_results" not in data:
+                return None
+
+            for result in data["organic_results"]:
+
+                link = result.get("link")
+
+                if link:
+                    return link
+
+            return None
+
+        except Exception as e:
+
+            print("SerpAPI Fehler:", e)
+
+            return None
