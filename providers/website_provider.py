@@ -56,7 +56,7 @@ class WebsiteProvider:
             response = requests.get(
                 self.BASE_URL,
                 params=params,
-                timeout=20
+                timeout=60
             )
 
             response.raise_for_status()
