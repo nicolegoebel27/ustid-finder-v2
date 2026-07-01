@@ -8,14 +8,9 @@ from services.excel_service import ExcelService
 
 app = FastAPI(title="USt-ID Finder Pro")
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+from app.config import UPLOAD_DIR, OUTPUT_DIR, BASE_DIR
 
-UPLOAD_DIR = BASE_DIR / "uploads"
-OUTPUT_DIR = BASE_DIR / "output"
 TEMPLATE_DIR = BASE_DIR / "templates"
-
-UPLOAD_DIR.mkdir(exist_ok=True)
-OUTPUT_DIR.mkdir(exist_ok=True)
 
 templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 
@@ -42,10 +37,13 @@ async def upload(file: UploadFile = File(...)):
 
     output_path = OUTPUT_DIR / f"Ergebnis_{file.filename}"
 
+    try:
     excel_service.process_file(
         input_path=input_path,
         output_path=output_path
     )
+except Exception as e:
+    return {"error": str(e)}
 
     return FileResponse(
         path=output_path,
