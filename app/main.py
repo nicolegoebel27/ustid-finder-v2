@@ -19,7 +19,9 @@ async def home(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={}
+        context={
+            "request": request
+        }
     )
 
 
