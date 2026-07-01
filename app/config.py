@@ -10,6 +10,10 @@ load_dotenv(BASE_DIR / ".env")
 # API-Schlüssel
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 
+print("===================================")
+print("SERPAPI_KEY:", SERPAPI_KEY)
+print("===================================")
+
 # Ordner
 UPLOAD_DIR = BASE_DIR / "uploads"
 OUTPUT_DIR = BASE_DIR / "output"
