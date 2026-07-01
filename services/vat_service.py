@@ -1,12 +1,18 @@
 import re
+from urllib.parse import urljoin
+
 import requests
 from bs4 import BeautifulSoup
+
+from app.config import REQUEST_TIMEOUT, USER_AGENT
 
 
 class VATService:
 
     def __init__(self):
-        pass
+        self.headers = {
+            "User-Agent": USER_AGENT
+        }
 
     def find_vat(self, website):
 
@@ -20,47 +26,41 @@ class VATService:
 
             response = requests.get(
                 website,
-                timeout=15,
-                headers={
-                    "User-Agent": "Mozilla/5.0"
-                }
+                headers=self.headers,
+                timeout=REQUEST_TIMEOUT
             )
 
-            if response.status_code != 200:
-                return {
-                    "vat": "",
-                    "status": "Website nicht erreichbar"
-                }
+            response.raise_for_status()
 
             html = response.text
 
+            # Direkt auf der Startseite suchen
             vat = self.extract_vat(html)
 
             if vat:
-
                 return {
                     "vat": vat,
                     "status": "USt-ID gefunden"
                 }
 
+            # Impressum suchen
             soup = BeautifulSoup(html, "lxml")
 
-            impressum = self.find_impressum(soup, website)
+            impressum_url = self.find_impressum(soup, website)
 
-            if impressum:
+            if impressum_url:
 
                 response = requests.get(
-                    impressum,
-                    timeout=15,
-                    headers={
-                        "User-Agent": "Mozilla/5.0"
-                    }
+                    impressum_url,
+                    headers=self.headers,
+                    timeout=REQUEST_TIMEOUT
                 )
+
+                response.raise_for_status()
 
                 vat = self.extract_vat(response.text)
 
                 if vat:
-
                     return {
                         "vat": vat,
                         "status": "USt-ID im Impressum gefunden"
@@ -75,33 +75,65 @@ class VATService:
 
             return {
                 "vat": "",
-                "status": str(e)
+                "status": f"Fehler: {e}"
             }
 
     def extract_vat(self, text):
 
-        pattern = r"\bDE[0-9]{9}\b"
+        patterns = [
 
-        match = re.search(pattern, text)
+            # Deutschland
+            r"\bDE\s?[0-9]{9}\b",
 
-        if match:
-            return match.group()
+            # Schreibweise USt-IdNr.: DE123456789
+            r"USt[- ]?IdNr\.?\s*:?\s*(DE\s?[0-9]{9})",
+
+            # VAT ID
+            r"VAT\s*ID\s*:?\s*(DE\s?[0-9]{9})",
+
+            # Umsatzsteuer-Identifikationsnummer
+            r"Umsatzsteuer[- ]?Identifikationsnummer\s*:?\s*(DE\s?[0-9]{9})",
+
+        ]
+
+        for pattern in patterns:
+
+            match = re.search(
+                pattern,
+                text,
+                flags=re.IGNORECASE
+            )
+
+            if match:
+
+                if match.lastindex:
+                    return match.group(1).replace(" ", "")
+
+                return match.group().replace(" ", "")
 
         return ""
 
     def find_impressum(self, soup, base_url):
 
+        suchbegriffe = [
+
+            "impressum",
+            "imprint",
+            "legal",
+            "legal notice",
+            "kontakt",
+            "contact"
+
+        ]
+
         for link in soup.find_all("a", href=True):
 
-            text = link.get_text().lower()
+            text = link.get_text(" ", strip=True).lower()
 
-            if "impressum" in text:
+            href = link["href"]
 
-                href = link["href"]
+            if any(wort in text for wort in suchbegriffe):
 
-                if href.startswith("http"):
-                    return href
-
-                return base_url.rstrip("/") + "/" + href.lstrip("/")
+                return urljoin(base_url, href)
 
         return None
