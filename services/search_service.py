@@ -18,7 +18,14 @@ class SearchService:
 
         query = f"{company} {street} {number} {zip_code} {city} {country}"
 
-        website = self.website_provider.find_website(query)
+        website = self.website_provider.find_website(
+    company,
+    street,
+    number,
+    zip_code,
+    city,
+    country
+)
 
         result = {
             "website": "",
