@@ -1,6 +1,9 @@
 fastapi
 uvicorn
-openpyxl
-python-multipart
-requests
 jinja2
+openpyxl
+requests
+beautifulsoup4
+lxml
+python-multipart
+httpx
