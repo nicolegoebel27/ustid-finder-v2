@@ -7,6 +7,7 @@ class SearchService:
     def __init__(self):
         self.website_provider = WebsiteProvider()
         self.vat_service = VATService()
+
     def search_company(
         self,
         company,
@@ -17,16 +18,14 @@ class SearchService:
         country
     ):
 
-        
-
         website = self.website_provider.find_website(
-    company,
-    street,
-    number,
-    zip_code,
-    city,
-    country
-)
+            company,
+            street,
+            number,
+            zip_code,
+            city,
+            country
+        )
 
         result = {
             "website": "",
@@ -41,9 +40,9 @@ class SearchService:
 
         vat_result = self.vat_service.find_vat(website)
 
-result["website"] = website
-result["vat"] = vat_result["vat"]
-result["source"] = "Website"
-result["status"] = vat_result["status"]
+        result["website"] = website
+        result["vat"] = vat_result["vat"]
+        result["source"] = "Website"
+        result["status"] = vat_result["status"]
 
-return result
+        return result
