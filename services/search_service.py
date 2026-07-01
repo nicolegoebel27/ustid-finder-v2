@@ -1,11 +1,12 @@
 from providers.website_provider import WebsiteProvider
+from services.vat_service import VATService
 
 
 class SearchService:
 
     def __init__(self):
         self.website_provider = WebsiteProvider()
-
+        self.vat_service = VATService()
     def search_company(
         self,
         company,
@@ -16,7 +17,7 @@ class SearchService:
         country
     ):
 
-        query = f"{company} {street} {number} {zip_code} {city} {country}"
+        
 
         website = self.website_provider.find_website(
     company,
@@ -38,10 +39,11 @@ class SearchService:
             result["status"] = "Keine Website gefunden"
             return result
 
-        result["website"] = website
-        result["source"] = "Website"
+        vat_result = self.vat_service.find_vat(website)
 
-        # Die USt-ID-Suche bauen wir im nächsten Schritt ein.
-        result["status"] = "Website gefunden"
+result["website"] = website
+result["vat"] = vat_result["vat"]
+result["source"] = "Website"
+result["status"] = vat_result["status"]
 
-        return result
+return result
