@@ -58,7 +58,7 @@ class WebsiteProvider:
                 response = requests.get(
                     self.BASE_URL,
                     params=params,
-                    timeout=60
+                    timeout=120
                 )
 
                 response.raise_for_status()
@@ -66,7 +66,7 @@ class WebsiteProvider:
                 data = response.json()
 
                 # kleine Pause gegen Rate-Limits
-                time.sleep(0.5)
+                time.sleep(1.0)
 
                 # Knowledge Graph bevorzugen
                 kg = data.get("knowledge_graph")
