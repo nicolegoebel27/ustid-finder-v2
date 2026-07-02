@@ -41,7 +41,7 @@ class ExcelService:
                 raise Exception(f"Spalte '{field}' wurde nicht gefunden.")
 
         # -------------------------
-        # Neue Spalten
+        # Neue Spalten anlegen
         # -------------------------
 
         website_col = ws.max_column + 1
@@ -54,41 +54,63 @@ class ExcelService:
         ws.cell(1, source_col).value = "Quelle"
         ws.cell(1, status_col).value = "Status"
 
+        total = ws.max_row - 1
+
+        print(f"Starte Verarbeitung von {total} Firmen...")
+
         # -------------------------
-        # Alle Firmen bearbeiten
+        # Firmen verarbeiten
         # -------------------------
 
         for row in range(2, ws.max_row + 1):
 
-            firma = str(ws.cell(row, headers["Firma"]).value or "").strip()
+            try:
 
-            if firma == "":
-                continue
+                firma = str(ws.cell(row, headers["Firma"]).value or "").strip()
 
-            street = str(ws.cell(row, headers["Straße"]).value or "").strip()
+                if not firma:
+                    continue
 
-            number = str(ws.cell(row, headers["Hnr."]).value or "").strip()
+                street = str(ws.cell(row, headers["Straße"]).value or "").strip()
+                number = str(ws.cell(row, headers["Hnr."]).value or "").strip()
+                zip_code = str(ws.cell(row, headers["PLZ"]).value or "").strip()
+                city = str(ws.cell(row, headers["Ort"]).value or "").strip()
+                country = str(ws.cell(row, headers["Land"]).value or "").strip()
 
-            zip_code = str(ws.cell(row, headers["PLZ"]).value or "").strip()
+                print(f"[{row-1}/{total}] {firma}")
 
-            city = str(ws.cell(row, headers["Ort"]).value or "").strip()
+                result = self.search.search_company(
+                    company=firma,
+                    street=street,
+                    number=number,
+                    zip_code=zip_code,
+                    city=city,
+                    country=country
+                )
 
-            country = str(ws.cell(row, headers["Land"]).value or "").strip()
+                ws.cell(row, website_col).value = result.get("website", "")
+                ws.cell(row, vat_col).value = result.get("vat", "")
+                ws.cell(row, source_col).value = result.get("source", "")
+                ws.cell(row, status_col).value = result.get("status", "")
 
-            result = self.search.search_company(
+            except Exception as e:
 
-                company=firma,
-                street=street,
-                number=number,
-                zip_code=zip_code,
-                city=city,
-                country=country
+                print(f"Fehler bei {firma}: {e}")
 
-            )
+                ws.cell(row, website_col).value = ""
+                ws.cell(row, vat_col).value = ""
+                ws.cell(row, source_col).value = ""
+                ws.cell(row, status_col).value = f"Fehler: {e}"
 
-            ws.cell(row, website_col).value = result.get("website", "")
-            ws.cell(row, vat_col).value = result.get("vat", "")
-            ws.cell(row, source_col).value = result.get("source", "")
-            ws.cell(row, status_col).value = result.get("status", "")
+            # Alle 25 Firmen speichern
+            if (row - 1) % 25 == 0:
+
+                print(f"Zwischenspeichern... ({row-1}/{total})")
+
+                wb.save(output_path)
+
+        print("Endgültiges Speichern...")
 
         wb.save(output_path)
+
+        print("Verarbeitung abgeschlossen.")
