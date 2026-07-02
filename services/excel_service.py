@@ -22,6 +22,7 @@ class ExcelService:
         headers = {}
 
         for col in range(1, ws.max_column + 1):
+
             value = ws.cell(row=1, column=col).value
 
             if value:
@@ -37,11 +38,12 @@ class ExcelService:
         ]
 
         for field in required:
+
             if field not in headers:
                 raise Exception(f"Spalte '{field}' wurde nicht gefunden.")
 
         # -------------------------
-        # Neue Spalten anlegen
+        # Neue Spalten
         # -------------------------
 
         website_col = ws.max_column + 1
@@ -56,13 +58,17 @@ class ExcelService:
 
         total = ws.max_row - 1
 
-        print(f"Starte Verarbeitung von {total} Firmen...")
+        print("=" * 60)
+        print(f"Starte Verarbeitung von {total} Firmen")
+        print("=" * 60)
 
         # -------------------------
         # Firmen verarbeiten
         # -------------------------
 
         for row in range(2, ws.max_row + 1):
+
+            firma = ""
 
             try:
 
@@ -95,22 +101,34 @@ class ExcelService:
 
             except Exception as e:
 
-                print(f"Fehler bei {firma}: {e}")
+                print(f"FEHLER bei '{firma}': {e}")
 
                 ws.cell(row, website_col).value = ""
                 ws.cell(row, vat_col).value = ""
                 ws.cell(row, source_col).value = ""
-                ws.cell(row, status_col).value = f"Fehler: {e}"
+                ws.cell(row, status_col).value = str(e)
 
-            # Alle 25 Firmen speichern
-            if (row - 1) % 25 == 0:
+            # Alle 10 Firmen speichern
+            if (row - 1) % 10 == 0:
 
-                print(f"Zwischenspeichern... ({row-1}/{total})")
+                try:
 
-                wb.save(output_path)
+                    wb.save(output_path)
 
-        print("Endgültiges Speichern...")
+                    print(f"Zwischengespeichert ({row-1}/{total})")
+
+                except Exception as e:
+
+                    print(f"FEHLER beim Zwischenspeichern: {e}")
+
+        # -------------------------
+        # Endgültig speichern
+        # -------------------------
+
+        print("Speichere endgültige Excel...")
 
         wb.save(output_path)
+
+        print(f"Excel erfolgreich gespeichert: {output_path}")
 
         print("Verarbeitung abgeschlossen.")
