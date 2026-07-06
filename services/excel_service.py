@@ -15,14 +15,9 @@ class ExcelService:
         wb = load_workbook(input_path)
         ws = wb.active
 
-        # -------------------------
-        # Überschriften einlesen
-        # -------------------------
-
         headers = {}
 
         for col in range(1, ws.max_column + 1):
-
             value = ws.cell(row=1, column=col).value
 
             if value:
@@ -38,13 +33,8 @@ class ExcelService:
         ]
 
         for field in required:
-
             if field not in headers:
                 raise Exception(f"Spalte '{field}' wurde nicht gefunden.")
-
-        # -------------------------
-        # Neue Spalten
-        # -------------------------
 
         website_col = ws.max_column + 1
         vat_col = ws.max_column + 2
@@ -56,34 +46,20 @@ class ExcelService:
         ws.cell(1, source_col).value = "Quelle"
         ws.cell(1, status_col).value = "Status"
 
-        total = ws.max_row - 1
-
-        print("=" * 60)
-        print(f"Starte Verarbeitung von {total} Firmen")
-        print("=" * 60)
-
-        # -------------------------
-        # Firmen verarbeiten
-        # -------------------------
-
         for row in range(2, ws.max_row + 1):
 
-            firma = ""
+            firma = str(ws.cell(row, headers["Firma"]).value or "").strip()
+
+            if firma == "":
+                continue
+
+            street = str(ws.cell(row, headers["Straße"]).value or "").strip()
+            number = str(ws.cell(row, headers["Hnr."]).value or "").strip()
+            zip_code = str(ws.cell(row, headers["PLZ"]).value or "").strip()
+            city = str(ws.cell(row, headers["Ort"]).value or "").strip()
+            country = str(ws.cell(row, headers["Land"]).value or "").strip()
 
             try:
-
-                firma = str(ws.cell(row, headers["Firma"]).value or "").strip()
-
-                if not firma:
-                    continue
-
-                street = str(ws.cell(row, headers["Straße"]).value or "").strip()
-                number = str(ws.cell(row, headers["Hnr."]).value or "").strip()
-                zip_code = str(ws.cell(row, headers["PLZ"]).value or "").strip()
-                city = str(ws.cell(row, headers["Ort"]).value or "").strip()
-                country = str(ws.cell(row, headers["Land"]).value or "").strip()
-
-                print(f"[{row-1}/{total}] {firma}")
 
                 result = self.search.search_company(
                     company=firma,
@@ -101,34 +77,9 @@ class ExcelService:
 
             except Exception as e:
 
-                print(f"FEHLER bei '{firma}': {e}")
-
                 ws.cell(row, website_col).value = ""
                 ws.cell(row, vat_col).value = ""
                 ws.cell(row, source_col).value = ""
                 ws.cell(row, status_col).value = str(e)
 
-            # Alle 10 Firmen speichern
-            if (row - 1) % 10 == 0:
-
-                try:
-
-                    wb.save(output_path)
-
-                    print(f"Zwischengespeichert ({row-1}/{total})")
-
-                except Exception as e:
-
-                    print(f"FEHLER beim Zwischenspeichern: {e}")
-
-        # -------------------------
-        # Endgültig speichern
-        # -------------------------
-
-        print("Speichere endgültige Excel...")
-
         wb.save(output_path)
-
-        print(f"Excel erfolgreich gespeichert: {output_path}")
-
-        print("Verarbeitung abgeschlossen.")
